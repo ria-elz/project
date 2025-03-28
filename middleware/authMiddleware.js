@@ -27,6 +27,7 @@ const verifyAdmin = (req, res, next) => {
         return res.status(401).render('adminLogin', { error: 'Invalid or expired token' });
     }
 };
+
 // Verify Instructor Middleware
 const verifyInstructor = (req, res, next) => {
     const token = req.cookies.token;
@@ -81,5 +82,4 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-
-module.exports = { verifyAdmin, verifyInstructor, verifyStudent, verifyToken   };
+module.exports = { verifyAdmin, verifyInstructor, verifyStudent, verifyToken };

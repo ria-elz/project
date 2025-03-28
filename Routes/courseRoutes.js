@@ -44,16 +44,35 @@ router.get('/:courseId', async (req, res) => {
     }
 });
 // In your course routes file
-router.get('/course/:id', async (req, res) => {
-    const course = await getCourseById(req.params.id);
-    const courseVideos = await getCourseVideos(req.params.id);
-    const courseNotes = await getCourseNotes(req.params.id);
-    
-    res.render('courseDetails', {
-        course,
-        courseVideos,
-        courseNotes
-    });
-});
+// Student route to view a course
+router.get('/course/:id', verifyToken, async (req, res) => {
+    try {
+      // Get course details
+      const [course] = await db.query(
+        'SELECT * FROM courses WHERE id = ?',
+        [req.params.id]
+      );
+  
+      // Get videos and notes for the course
+      const [videos] = await db.query(
+        'SELECT * FROM course_videos WHERE course_id = ?',
+        [req.params.id]
+      );
+      const [notes] = await db.query(
+        'SELECT * FROM course_notes WHERE course_id = ?',
+        [req.params.id]
+      );
+  
+      res.render('studentCourseView', {
+        course: course[0],
+        videos,
+        notes,
+        messages: req.flash()
+      });
+    } catch (error) {
+      console.error('Course view error:', error);
+      res.status(500).send('Server Error');
+    }
+  });
 
 module.exports = router;

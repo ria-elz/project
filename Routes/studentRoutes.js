@@ -19,6 +19,38 @@ router.get('/categories', async (req, res) => {
         res.status(500).send("Server error.");
     }
 });
+// Example route handler
+// In studentRoutes.js
+router.get('/student/courses', verifyToken, async (req, res) => {
+    try {
+      // Fetch courses with their videos/notes from the database
+      const [courses] = await db.query(`
+        SELECT 
+          c.*,
+          u.name AS instructor_name,
+          (SELECT JSON_ARRAYAGG(JSON_OBJECT('video_url', video_url)) 
+           FROM course_videos WHERE course_id = c.id) AS videos,
+          (SELECT JSON_ARRAYAGG(JSON_OBJECT('note_url', note_url)) 
+           FROM course_notes WHERE course_id = c.id) AS notes
+        FROM courses c
+        JOIN users u ON c.instructor_id = u.id
+      `);
+  
+      // Parse JSON fields and pass to the template
+      res.render('studentCategories', {
+        courses: courses.map(course => ({
+          ...course,
+          videos: JSON.parse(course.videos || '[]'),
+          notes: JSON.parse(course.notes || '[]')
+        })),
+        user: req.user // Pass user data if needed
+      });
+  
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Server Error');
+    }
+  });
 router.get('/course/:courseId/video/:videoId',
     verifyToken,
     progressTracking.trackProgress,

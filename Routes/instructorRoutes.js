@@ -86,7 +86,6 @@ router.post('/create-course', verifyToken, upload.fields([
 });
 
 // GET: Instructor dashboard with courses
-// GET: Instructor dashboard with courses
 router.get('/dashboard', verifyToken, async (req, res) => {
     try {
         const [courses] = await db.query(`
@@ -175,43 +174,39 @@ router.get('/view-enrolled-students/:courseId', verifyToken, async (req, res) =>
 // GET: Show edit course form
 router.get('/edit-course/:id', verifyToken, async (req, res) => {
     try {
-        const [course] = await db.query(`
-            SELECT 
-                c.*,
-                COALESCE(
-                    (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', id, 'video_url', video_url))
-                     FROM course_videos 
-                     WHERE course_id = c.id),
-                    '[]'
-                ) AS videos,
-                COALESCE(
-                    (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', id, 'note_url', note_url))
-                     FROM course_notes 
-                     WHERE course_id = c.id),
-                    '[]'
-                ) AS notes
-            FROM courses c
-            WHERE c.id = ? AND c.instructor_id = ?
-        `, [req.params.id, req.user.id]);
-
-        const parsedCourse = {
-            ...course[0],
-            videos: JSON.parse(course[0].videos),
-            notes: JSON.parse(course[0].notes)
-        };
-
-        res.render('editCourse', {
-            course: parsedCourse,
-            messages: req.flash()
-        });
+      const [course] = await db.query(`
+        SELECT 
+          c.*,
+          COALESCE(
+            (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', id, 'video_url', video_url))
+            FROM course_videos 
+            WHERE course_id = c.id
+          ), '[]') AS videos,
+          COALESCE(
+            (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', id, 'note_url', note_url))
+            FROM course_notes 
+            WHERE course_id = c.id
+          ), '[]') AS notes
+        FROM courses c
+        WHERE c.id = ? AND c.instructor_id = ?
+      `, [req.params.id, req.user.id]);
+  
+      // Explicitly parse videos and notes
+      const parsedCourse = {
+        ...course[0],
+        videos: JSON.parse(course[0].videos), // Parse JSON string to array
+        notes: JSON.parse(course[0].notes)     // Parse JSON string to array
+      };
+  
+      res.render('editCourse', {
+        course: parsedCourse,
+        messages: req.flash()
+      });
     } catch (error) {
-        console.error('Edit course error:', error);
-        res.status(500).send('Server Error');
+      console.error('Edit course error:', error);
+      res.status(500).send('Server Error');
     }
-});
-
-// POST: Update course
-// POST: Update course
+  });
 // POST: Update course
 router.post('/update-course/:id', 
     verifyToken, 
@@ -315,26 +310,48 @@ router.post('/update-course/:id',
     }
 );
 
-// DELETE: Delete course
-// DELETE: Delete course
-// DELETE: Delete course
-router.delete('/delete-course/:id', verifyToken, async (req, res) => {
+// DELETE: Delete course with proper path
+router.delete('/course/:id', verifyToken, async (req, res) => {
+    console.log('🏁 Delete route triggered for ID:', req.params.id); 
+    const connection = await db.getConnection();
     try {
-        await db.query(`
-            DELETE FROM courses 
-            WHERE id = ? AND instructor_id = ?
-        `, [req.params.id, req.user.id]);
+        await connection.beginTransaction();
 
+        // 1. Get files to delete
+        const [videos] = await connection.query(
+            'SELECT video_url FROM course_videos WHERE course_id = ?',
+            [req.params.id]
+        );
+        const [notes] = await connection.query(
+            'SELECT note_url FROM course_notes WHERE course_id = ?',
+            [req.params.id]
+        );
+
+        // 2. Delete database records
+        await connection.query('DELETE FROM enrollments WHERE course_id = ?', [req.params.id]);
+        await connection.query('DELETE FROM course_videos WHERE course_id = ?', [req.params.id]);
+        await connection.query('DELETE FROM course_notes WHERE course_id = ?', [req.params.id]);
+        await connection.query('DELETE FROM courses WHERE id = ? AND instructor_id = ?', 
+            [req.params.id, req.user.id]);
+
+        // 3. Delete physical files
+        const uploadDir = path.join(__dirname, '../uploads');
+        await Promise.all([
+            ...videos.map(v => fs.unlink(path.join(uploadDir, v.video_url))),
+            ...notes.map(n => fs.unlink(path.join(uploadDir, n.note_url)))
+        ]);
+
+        await connection.commit();
         req.flash('success', 'Course deleted successfully');
         res.redirect('/instructor/dashboard');
-
     } catch (error) {
-        console.error('Delete course error:', error);
+        await connection.rollback();
+        console.error('Delete error:', error);
         req.flash('error', 'Failed to delete course');
         res.redirect('/instructor/dashboard');
+    } finally {
+        connection.release();
     }
 });
-
-module.exports = router;
 
 module.exports = router;
