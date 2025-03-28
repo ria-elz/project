@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Admin Dashboard</a>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+            
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Admin Dashboard</h1>
+
+    <% if (message) { %>
+        <div class="alert alert-success" role="alert"><%= message %></div>
+    <% } %>
+
+    <!-- Add User Section -->
+    <div id="addUserSection" class="mb-4">
+        <h2>Add New User</h2>
+        <form action="/admin/addUser" method="POST">
+            <div class="mb-3">
+                <input type="text" name="name" class="form-control" placeholder="Full Name" required>
+            </div>
+            <div class="mb-3">
+                <input type="email" name="email" class="form-control" placeholder="Email Address" required>
+            </div>
+            <div class="mb-3">
+                <input type="password" name="password" class="form-control" placeholder="Password" required>
+            </div>
+            <div class="mb-3">
+                <select name="role" class="form-control" required>
+                    <option value="">Select Role</option>
+                    <option value="admin">Admin</option>
+                    <option value="instructor">Instructor</option>
+                    <option value="student">Student</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Add User</button>
+        </form>
+    </div>
+
+    <!-- Add Course Section -->
+    <div class="mb-4">
+        <h2>Add New Course</h2>
+        <form action="/admin/addCourse" method="POST">
+            <div class="mb-3">
+                <input type="text" name="title" class="form-control" placeholder="Course Title" required>
+            </div>
+            <div class="mb-3">
+                <input type="text" name="instructorId" class="form-control" placeholder="Instructor User ID (must exist)" required>
+            </div>
+            <div class="mb-3">
+                <textarea name="description" class="form-control" placeholder="Course Description" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Course</button>
+        </form>
+    </div>
+    <!-- All Courses Section -->
+<div class="mb-4">
+    <h2>All Courses</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Course ID</th>
+                <th>Course Title</th>
+                <th>Instructor ID</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="courseTableBody">
+            <% courses.forEach(course => { %>
+                <tr id="course-<%= course.id %>">
+                    <td><%= course.id %></td>
+                    <td><%= course.title %></td>
+                    <td><%= course.instructorId %></td>
+                    <td>
+                        <form action="/admin/deleteCourse/<%= course.id %>?_method=DELETE" method="POST">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete Course</button>
+                        </form>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>
+
+
+    <!-- All Users Section -->
+   <!-- All Users Section -->
+<div class="mb-4">
+    <h2>All Users</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody">
+            <% users.forEach(user => { %>
+                <tr id="user-<%= user.id %>">
+                    <td><%= user.id %></td>
+                    <td><%= user.name %></td>
+                    <td><%= user.email %></td>
+                    <td><%= user.role %></td>
+                    <td>
+                        <form action="/admin/deleteUser/<%= user.id %>?_method=DELETE" method="POST">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete User</button>
+                        </form>
+                    </td>
+                    
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Get all delete buttons
+    document.querySelectorAll('.delete-user-btn').forEach(button => {
+    button.addEventListener('click', async function () {
+        const userId = this.getAttribute('data-user-id');  // Retrieve user ID
+
+        if (confirm('Are you sure you want to delete this user?')) {
+            try {
+                const response = await fetch(`/admin/deleteUser/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                const data = await response.json();
+                if (data.message) {
+                    alert(data.message);  // Show success message
+                    this.closest('tr').remove();  // Remove user row from table
+                } else {
+                    alert('Failed to delete user.');
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                alert('An error occurred while deleting the user.');
+            }
+        }
+    });
+});
+
+</script>
+
+
+<script>
+    setTimeout(() => {
+        const alert = document.querySelector('.alert');
+        if (alert) alert.remove();  // Remove the alert after 5 seconds
+    }, 5000);
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

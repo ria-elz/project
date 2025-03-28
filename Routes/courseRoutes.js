@@ -43,5 +43,17 @@ router.get('/:courseId', async (req, res) => {
         res.status(500).send('Server error.');
     }
 });
+// In your course routes file
+router.get('/course/:id', async (req, res) => {
+    const course = await getCourseById(req.params.id);
+    const courseVideos = await getCourseVideos(req.params.id);
+    const courseNotes = await getCourseNotes(req.params.id);
+    
+    res.render('courseDetails', {
+        course,
+        courseVideos,
+        courseNotes
+    });
+});
 
 module.exports = router;

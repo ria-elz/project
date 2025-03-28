@@ -162,15 +162,21 @@
                         <a class="nav-link" href="/home">Home</a>
                     </li>
                     <li class="nav-item">
-                        <!-- Updated 'Categories' link to scroll to the Popular Categories section -->
-                        <a class="nav-link" href="#popular-categories">Categories</a> 
+                        <% if (user && user.role === 'instructor') { %>
+                            <a class="nav-link" href="/instructor/categories">Manage Content</a>  <!-- Instructor Page -->
+                        <% } else if (user && user.role === 'student') { %>
+                            <a class="nav-link" href="/student/categories">Explore Content</a>  <!-- Student Page -->
+                        <% } else { %>
+                            <a class="nav-link" href="#popular-categories">Categories</a> <!-- Default for guests -->
+                        <% } %>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Sign Up</a>
-                    </li>
+
+                    <% if (user) { %>
+                        <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+                    <% } else { %>
+                        <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/register">Sign Up</a></li>
+                    <% } %>
                 </ul>
             </div>
         </div>

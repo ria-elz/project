@@ -1,18 +1,27 @@
 const mysql = require('mysql2/promise');
 
-// Create a connection to the database
-const db = mysql.createPool({
+// Database configuration
+const dbConfig = {
     host: 'localhost',
     user: 'root',
-    password: 'root',  // Replace with your actual DB password
-    database: 'online_learning_platform'
-});
+    password: 'root',
+    database: 'online_learning_platform',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+};
 
-// Initialize tables (if they don't exist)
+// Create connection pool
+const db = mysql.createPool(dbConfig);
+
+// Initialize tables with proper error handling
 const initializeDatabase = async () => {
+    let connection;
     try {
-        // Users table (Admin, Instructor, Student roles will be referenced here)
-        await db.query(`
+        connection = await db.getConnection();
+        
+        // 1. Create users table
+        await connection.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
@@ -20,52 +29,97 @@ const initializeDatabase = async () => {
                 password VARCHAR(255) NOT NULL,
                 role ENUM('admin', 'instructor', 'student') NOT NULL,
                 photo VARCHAR(255) DEFAULT NULL
-            );
+            ) ENGINE=InnoDB;
         `);
 
-        // Courses table (Instructors will add courses)
-        await db.query(`
+        // 2. Create courses table (without video_url)
+        await connection.query(`
             CREATE TABLE IF NOT EXISTS courses (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 instructor_id INT NOT NULL,
                 title VARCHAR(255) NOT NULL,
                 description TEXT,
-                video_url VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE
-            );
+            ) ENGINE=InnoDB;
         `);
 
-        // Enrollments table (Students enrolling in courses)
-        await db.query(`
+        // 3. Create course_videos table
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS course_videos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                course_id INT NOT NULL,
+                video_url VARCHAR(255) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        `);
+
+        // 4. Create course_notes table
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS course_notes (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                course_id INT NOT NULL,
+                note_url VARCHAR(255) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        `);
+
+        // 5. Create enrollments table
+        await connection.query(`
             CREATE TABLE IF NOT EXISTS enrollments (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
                 course_id INT NOT NULL,
+                enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id),
                 FOREIGN KEY (course_id) REFERENCES courses(id)
-            );
+            ) ENGINE=InnoDB;
         `);
 
-        // Course Progress table (Tracking progress of students)
-        await db.query(`
+        // 6. Create course_progress table (fixed version)
+        await connection.query(`
             CREATE TABLE IF NOT EXISTS course_progress (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
                 course_id INT NOT NULL,
-                progress INT DEFAULT 0,
+                content_id INT NOT NULL,
+                content_type ENUM('video', 'note') NOT NULL,
+                progress FLOAT DEFAULT 0,
+                last_viewed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id),
-                FOREIGN KEY (course_id) REFERENCES courses(id)
-            );
+                FOREIGN KEY (course_id) REFERENCES courses(id),
+                INDEX content_idx (content_type, content_id)
+            ) ENGINE=InnoDB;
         `);
 
-        console.log("Database tables with roles initialized successfully!");
+        console.log("Database tables initialized successfully!");
     } catch (err) {
-        console.error("Error initializing database tables:", err);
+        console.error("Database initialization error:", err);
         throw err;
+    } finally {
+        if (connection) connection.release();
     }
 };
 
-// Run the table initialization function
-initializeDatabase();
+// Verify database connection
+const verifyConnection = async () => {
+    try {
+        const [rows] = await db.query('SELECT 1 + 1 AS result');
+        console.log("Database connection verified. Result:", rows[0].result);
+    } catch (err) {
+        console.error("Database connection failed:", err);
+        process.exit(1);
+    }
+};
+
+// Initialize database with connection verification
+(async () => {
+    await verifyConnection();
+    await initializeDatabase();
+})();
 
 module.exports = db;

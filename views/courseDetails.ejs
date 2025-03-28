@@ -5,21 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Course Details</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .list-group-item {
+            transition: all 0.3s ease;
+        }
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+        .content-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h1>Course Details</h1>
-        <p><strong>Title:</strong> <%= course.title %></p>
-        <p><strong>Description:</strong> <%= course.description %></p>
+        <h1 class="text-center mb-4">Course Details</h1>
 
-        <h3>Course Video:</h3>
-        <video width="100%" height="400" controls>
-            <source src="<%= course.video_url %>" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title"><%= course.title %></h3>
+                <p class="card-text"><strong>Description:</strong> <%= course.description %></p>
+                <small class="text-muted">
+                    Created on: <%= new Date(course.created_at).toLocaleDateString() %>
+                </small>
+            </div>
+        </div>
 
-        <div class="mt-4">
-            <a href="/courses" class="btn btn-secondary">Back to Courses</a>
+        <div class="content-section">
+            <!-- Videos Section -->
+            <h4 class="mb-3"><i class="bi bi-play-btn"></i> Course Videos</h4>
+            <% if (courseVideos.length > 0) { %>
+                <div class="list-group">
+                    <% courseVideos.forEach(video => { %>
+                        <a href="/student/course/<%= course.id %>/video/<%= video.id %>" 
+                           class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="bi bi-play-circle mr-3" style="font-size: 1.2rem;"></i>
+                            <div>
+                                <h5 class="mb-1"><%= video.title || 'Untitled Video' %></h5>
+                                <small class="text-muted">Uploaded: <%= new Date(video.created_at).toLocaleDateString() %></small>
+                            </div>
+                        </a>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="alert alert-info">
+                    No videos available for this course
+                </div>
+            <% } %>
+        </div>
+
+        <div class="content-section mt-4">
+            <!-- Notes Section -->
+            <h4 class="mb-3"><i class="bi bi-file-earmark"></i> Course Notes</h4>
+            <% if (courseNotes.length > 0) { %>
+                <div class="list-group">
+                    <% courseNotes.forEach(note => { %>
+                        <a href="/student/course/<%= course.id %>/note/<%= note.id %>" 
+                           class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="bi bi-file-earmark-text mr-3" style="font-size: 1.2rem;"></i>
+                            <div>
+                                <h5 class="mb-1"><%= note.title || 'Untitled Note' %></h5>
+                                <small class="text-muted">Uploaded: <%= new Date(note.created_at).toLocaleDateString() %></small>
+                            </div>
+                        </a>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="alert alert-info">
+                    No notes available for this course
+                </div>
+            <% } %>
+        </div>
+
+        <div class="mt-4 text-center">
+            <a href="/courses" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Back to Courses
+            </a>
         </div>
     </div>
 </body>

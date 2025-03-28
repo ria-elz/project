@@ -1,14 +1,57 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Courses</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            max-width: 1100px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .card {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .btn-custom {
+            width: 100%; 
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-primary {
+            background-color: #1c1d1f;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #333;
+        }
+        .btn-success {
+            background-color: #28a745;
+            border: none;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .no-courses {
+            text-align: center;
+            color: #6c757d;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
         <h1>Available Courses</h1>
+
         <div class="text-right mb-3">
             <a href="/home" class="btn btn-secondary">Back to Dashboard</a>
         </div>
@@ -21,16 +64,18 @@
                             <div class="card-body">
                                 <h5 class="card-title"><%= course.title %></h5>
                                 <p class="card-text"><%= course.description %></p>
-                                <a href="/course/<%= course.id %>" class="btn btn-primary">View Course</a>
-                                <a href="/enroll/<%= course.id %>" class="btn btn-success">Enroll</a>
+                                <a href="/course/<%= course.id %>" class="btn btn-primary btn-custom">View Course</a>
+                                <a href="/enroll/<%= course.id %>" class="btn btn-success btn-custom">Enroll</a>
                             </div>
                         </div>
                     </div>
                 <% }); %>
             </div>
         <% } else { %>
-            <p>No courses available at the moment.</p>
+            <p class="no-courses">No courses available at the moment.</p>
         <% } %>
     </div>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

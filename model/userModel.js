@@ -25,12 +25,14 @@ const getUserById = async (id) => {
 const getUserByEmail = async (email) => {
     try {
         const [user] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-        return user[0];  // Return user if found, otherwise undefined
+        console.log("User fetched from DB in userModel:", user);
+        return user[0];  // Return the first user object
     } catch (err) {
-        console.error("Error fetching user by email:", err);
+        console.error("Error fetching user by email in userModel:", err);
         throw err;
     }
 };
+
 
 // Update user information (including optional photo)
 const updateUser = async (id, name, email, photo) => {
@@ -67,10 +69,11 @@ const enrollUserInCourse = async (userId, courseId) => {
 };
 
 // Get enrolled courses for a user
+// In getUserCourses
 const getUserCourses = async (userId) => {
     try {
         const [courses] = await db.query(`
-            SELECT c.id, c.title, c.description, c.video_url 
+            SELECT c.id, c.title, c.description 
             FROM courses c 
             INNER JOIN enrollments e ON c.id = e.course_id 
             WHERE e.user_id = ?

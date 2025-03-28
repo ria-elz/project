@@ -1,162 +1,81 @@
-// index.js (Updated)
 const express = require('express');
-const db = require('./config/db');  
-const lRoute = require('./Routes/loginRoutes');
-
 const path = require('path');
-const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
-const multer = require('multer');  
-const { getAllCourses, getCourseById, enrollInCourse, getUserProgress } = require('./model/courseModel');
+const flash = require('connect-flash');
+const methodOverride = require('method-override');
+require('dotenv').config();
+
 const app = express();
+const PORT = process.env.PORT || 3002;
 
-const JWT_SECRET = 'your-secret-key';
+// Database connection
+require('./config/db');
 
+// Middleware
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(cookieParser());
+app.use(methodOverride('_method'));
 app.use(session({
-    secret: JWT_SECRET,
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false }
 }));
+app.use(flash());
 
+// View engine setup
 app.set('view engine', 'ejs');
-app.set('views', path.resolve(__dirname, 'views'));
+app.set('views', path.join(__dirname, 'views'));
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads');
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
+// Make user and messages available to all views
+app.use((req, res, next) => {
+    res.locals.user = req.session.user || null;
+    res.locals.messages = req.flash();
+    next();
 });
-
-const upload = multer({ storage: storage });
-
-const verifyToken = (req, res, next) => {
-    const token = req.cookies.token || req.session.token;
-    if (!token) {
-        return res.redirect('/login');
-    }
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.redirect('/login');
-        }
-        req.user = decoded;
-        next();
-    });
-};
 
 // Routes
-app.get('/home', verifyToken, async (req, res) => {
-    try {
-        const courses = await getAllCourses(); // Fetch available courses
-        res.render('home', {
-            courses,
-            user: req.session.user || { name: 'Guest' }
-        });
-    } catch (err) {
-        console.error("Error loading home page:", err);
-        res.status(500).send("Server Error");
-    }
-});
+const loginRoutes = require('./Routes/loginRoutes');
+const adminRoutes = require('./Routes/adminRoutes');
+const instructorRoutes = require('./Routes/instructorRoutes');
+const studentRoutes = require('./Routes/studentRoutes');
 
-app.get('/courses/:id', verifyToken, async (req, res) => {
-    try {
-        const course = await getCourseById(req.params.id);
-        const progress = await trackProgress(req.user.id, req.params.id);
-        res.render('courseDetails', { course, progress });
-    } catch (err) {
-        console.error("Error loading course details:", err);
-        res.status(500).send("Server Error");
-    }
-});
+app.use('/', loginRoutes);
+app.use('/admin', adminRoutes);
+app.use('/instructor', instructorRoutes);
+app.use('/student', studentRoutes);
 
-app.post('/enroll/:id', verifyToken, async (req, res) => {
-    try {
-        await enrollCourse(req.user.id, req.params.id);
-        res.redirect(`/courses/${req.params.id}`);
-    } catch (err) {
-        console.error("Error enrolling in course:", err);
-        res.status(500).send("Server Error");
-    }
-});
+// Basic routes
+app.get('/', (req, res) => res.render('index'));
+app.get('/home', (req, res) => res.render('home'));
 
-app.get('/upload', verifyToken, (req, res) => {
-    if (req.session.user && req.session.user.role === 'instructor') {
-        res.render('uploadLecture');
-    } else {
-        res.status(403).send('Access Denied');
-    }
-});
-
-app.post('/upload', verifyToken, upload.single('video'), async (req, res) => {
-    try {
-        const { courseId, title } = req.body;
-        const videoPath = req.file.filename;
-        await addLecture(courseId, title, videoPath);
-        res.redirect('/home');
-    } catch (err) {
-        console.error("Error uploading video:", err);
-        res.status(500).send("Server Error");
-    }
-});
-
-app.get('/', (req, res) => {
-    res.render('index', { user: req.session.user || null });
-});
-
-app.get('/register', (req, res) => {
-    res.render('register', {
-        errors: [],
-        name: '',
-        email: ''
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).render('error', { 
+        message: 'Something went wrong!',
+        user: req.session.user || null
     });
 });
 
-app.get('/login', (req, res) => {
-    res.render('login', { errors: [] });  // Pass an empty errors array by default
+// 404 handler
+app.use((req, res) => {
+    res.status(404).render('404', { 
+        user: req.session.user || null 
+    });
+});
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).render('error', { 
+        message: err.message || 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err : {}
+    });
 });
 
-
-app.get('/logout', (req, res) => {
-    res.clearCookie('token');
-    req.session.destroy();
-    res.redirect('/login');
-});
-
-app.use("/", lRoute);
-
-app.get('/courses', verifyToken, async (req, res) => {
-    const courses = await getAllCourses();
-    res.render('courses', { courses });
-});
-
-// View course details
-app.get('/course/:id', verifyToken, async (req, res) => {
-    const course = await getCourseById(req.params.id);
-    res.render('courseDetails', { course });
-});
-
-// Enroll in a course
-app.get('/enroll/:id', verifyToken, async (req, res) => {
-    await enrollInCourse(req.user.id, req.params.id);
-    res.redirect('/progress');
-});
-
-// View course progress
-app.get('/progress', verifyToken, async (req, res) => {
-    const progressList = await getUserProgress(req.user.id);
-    res.render('progress', { progressList });
-});
-
-app.listen(3002, () => {
-    console.log("Server is running on port 3002");
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

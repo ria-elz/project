@@ -3,37 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Progress</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Student Progress - <%= course.title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .progress-bar {
+            transition: width 0.5s ease;
+            min-width: 2em;
+        }
+        .progress-container {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1>Your Course Progress</h1>
-
-        <% if (progressList.length > 0) { %>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Course</th>
-                        <th>Progress</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% progressList.forEach((progress) => { %>
-                        <tr>
-                            <td><%= progress.title %></td>
-                            <td><%= progress.progress %>% completed</td>
-                        </tr>
-                    <% }); %>
-                </tbody>
-            </table>
-        <% } else { %>
-            <p>You haven't started any courses yet.</p>
-        <% } %>
-
-        <div class="mt-4">
-            <a href="/home" class="btn btn-secondary">Back to Dashboard</a>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/instructor/dashboard">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+            <span class="navbar-text">
+                Course: <strong><%= course.title %></strong>
+            </span>
         </div>
+    </nav>
+
+    <div class="container py-4">
+        <h3 class="mb-4">Student Progress</h3>
+        
+        <% if (students && students.length > 0) { %>
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Email</th>
+                                    <th>Video Progress</th>
+                                    <th>Notes Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% students.forEach(student => { %>
+                                    <tr>
+                                        <td><%= student.name %></td>
+                                        <td><%= student.email %></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1" style="height: 25px;">
+                                                    <div class="progress-bar bg-success" 
+                                                         role="progressbar" 
+                                                        style="width: <%= student.video_progress %>%">
+                                                        <%= student.video_progress %>%
+                                                    </div>
+                                                </div>
+                                                <small class="ms-2">
+                                                    <%= student.videos_completed %>/<%= (course.videos || []).length %>
+                                                </small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1" style="height: 25px;">
+                                                    <div class="progress-bar bg-info" 
+                                                         role="progressbar" 
+                                                         style="width: <%= student.note_progress %>%;">
+                                                        <%= student.note_progress %>%
+                                                    </div>
+                                                </div>
+                                                <small class="ms-2">
+                                                    <%= student.notes_completed %>/<%= (course.notes || []).length %>
+                                                </small>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="alert alert-info text-center py-4">
+                <i class="bi bi-info-circle"></i>
+                <h4 class="mt-2">No Enrolled Students</h4>
+                <p class="mb-0">Students will appear here once they enroll in your course</p>
+            </div>
+        <% } %>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
