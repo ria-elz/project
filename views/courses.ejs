@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Available Courses</h1>
+        <div class="text-right mb-3">
+            <a href="/home" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+
+        <% if (courses.length > 0) { %>
+            <div class="row">
+                <% courses.forEach((course) => { %>
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title"><%= course.title %></h5>
+                                <p class="card-text"><%= course.description %></p>
+                                <a href="/course/<%= course.id %>" class="btn btn-primary">View Course</a>
+                                <a href="/enroll/<%= course.id %>" class="btn btn-success">Enroll</a>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } else { %>
+            <p>No courses available at the moment.</p>
+        <% } %>
+    </div>
+</body>
+</html>

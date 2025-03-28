@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Educational Platform</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Create an Account</h2>
+
+        <% if (errors && errors.length > 0) { %>
+            <div class="alert alert-danger">
+                <ul>
+                    <% errors.forEach(error => { %>
+                        <li><%= error.msg %></li>
+                    <% }) %>
+                </ul>
+            </div>
+        <% } %>
+
+        <form action="/register" method="POST">
+            <input type="text" name="name" placeholder="Full Name" value="<%= name || '' %>" required>
+            <input type="email" name="email" placeholder="Email" value="<%= email || '' %>" required>
+            <input type="password" name="password" placeholder="Password" required>
+            
+            <label for="role">Select Role:</label>
+            <select name="role" required>
+                <option value="student">Student</option>
+                <option value="instructor">Instructor</option>
+            </select>
+
+            <button type="submit">Register</button>
+        </form>
+
+        <p>Already have an account? <a href="/login">Login here</a></p>
+    </div>
+
+</body>
+</html>

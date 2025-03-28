@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Progress</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Your Course Progress</h1>
+
+        <% if (progressList.length > 0) { %>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% progressList.forEach((progress) => { %>
+                        <tr>
+                            <td><%= progress.title %></td>
+                            <td><%= progress.progress %>% completed</td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        <% } else { %>
+            <p>You haven't started any courses yet.</p>
+        <% } %>
+
+        <div class="mt-4">
+            <a href="/home" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>
