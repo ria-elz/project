@@ -46,45 +46,52 @@ router.get('/create-course', verifyToken, (req, res) => {
 });
 
 // POST: Handle course creation
+// POST: Handle course creation
 router.post('/create-course', verifyToken, upload.fields([
     { name: 'videos', maxCount: 5 },
     { name: 'notes', maxCount: 5 }
-]), async (req, res) => {
+  ]), async (req, res) => {
     try {
-        const { courseTitle, description } = req.body;
-        const instructorId = req.user.id;
-
-        // Process uploaded files
-        const videos = req.files['videos']?.map(file => file.filename) || [];
-        const notes = req.files['notes']?.map(file => file.filename) || [];
-
-        // Insert into database
-        const [result] = await db.query(
-            'INSERT INTO courses (instructor_id, title, description, videos, notes) VALUES (?, ?, ?, ?, ?)',
-            [
-                instructorId,
-                courseTitle,
-                description,
-                JSON.stringify(videos),
-                JSON.stringify(notes)
-            ]
+      const { courseTitle, description } = req.body;
+      const instructorId = req.user.id;
+  
+      // Insert course into the courses table
+      const [courseResult] = await db.query(
+        'INSERT INTO courses (instructor_id, title, description) VALUES (?, ?, ?)',
+        [instructorId, courseTitle, description]
+      );
+      const courseId = courseResult.insertId;
+  
+      // Insert videos into course_videos
+      if (req.files.videos) {
+        await Promise.all(
+          req.files.videos.map(async (video) => {
+            await db.query(
+              'INSERT INTO course_videos (course_id, video_url) VALUES (?, ?)',
+              [courseId, video.filename]
+            );
+          })
         );
-
-        // Return success response
-        return res.json({ 
-            success: true,
-            courseId: result.insertId
-        });
-
+      }
+  
+      // Insert notes into course_notes
+      if (req.files.notes) {
+        await Promise.all(
+          req.files.notes.map(async (note) => {
+            await db.query(
+              'INSERT INTO course_notes (course_id, note_url) VALUES (?, ?)',
+              [courseId, note.filename]
+            );
+          })
+        );
+      }
+  
+      res.json({ success: true, courseId });
     } catch (error) {
-        console.error('Create Course Error:', error);
-        return res.status(500).json({ 
-            success: false,
-            error: 'Failed to create course'
-        });
+      console.error('Create Course Error:', error);
+      res.status(500).json({ success: false, error: 'Failed to create course' });
     }
-});
-
+  });
 // GET: Instructor dashboard with courses
 router.get('/dashboard', verifyToken, async (req, res) => {
     try {

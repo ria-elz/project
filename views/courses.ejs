@@ -40,6 +40,11 @@
         .btn-success:hover {
             background-color: #218838;
         }
+        .btn-danger {
+            margin-top: 20px;
+            width: 100%;
+            font-weight: bold;
+        }
         .no-courses {
             text-align: center;
             color: #6c757d;
@@ -74,6 +79,13 @@
         <% } else { %>
             <p class="no-courses">No courses available at the moment.</p>
         <% } %>
+
+        <!-- Close Button -->
+        <div class="text-center mt-4">
+            <a href="/student/categories" class="btn btn-danger">
+                <i class="bi bi-x-circle"></i> Close
+            </a>
+        </div>
     </div>
 
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
