@@ -18,7 +18,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(methodOverride('_method'));
+app.use(methodOverride('_method')); // Method override middleware
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
@@ -68,12 +68,18 @@ app.use((req, res) => {
         user: req.session.user || null 
     });
 });
+
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).render('error', { 
         message: err.message || 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err : {}
     });
+});
+
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    next();
 });
 
 app.listen(PORT, () => {

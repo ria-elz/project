@@ -72,14 +72,13 @@
                                                 </a>
                                             </li>
                                             <li>
-                                                <form action="/instructor/delete-course/<%= course.id %>" 
-                                                      method="POST"
-                                                      onsubmit="return confirm('Delete this course permanently?')">
+                                                <form action="/instructor/delete-course/<%= course.id %>" method="POST" onsubmit="return confirm('Delete this course permanently?')">
                                                     <input type="hidden" name="_method" value="DELETE">
                                                     <button type="submit" class="dropdown-item text-danger">
                                                         <i class="bi bi-trash"></i> Delete
                                                     </button>
                                                 </form>
+                                                
                                             </li>
                                         </ul>
                                     </div>
@@ -93,10 +92,10 @@
                                         <span class="badge bg-primary file-badge dropdown-toggle"
                                               data-bs-toggle="dropdown"
                                               aria-expanded="false">
-                                            <i class="bi bi-camera-video"></i> <%= course.videos.length %> Videos
+                                            <i class="bi bi-camera-video"></i> <%= course.videos ? course.videos.length : 0 %> Videos
                                         </span>
                                         <ul class="dropdown-menu">
-                                            <% if (course.videos.length === 0) { %>
+                                            <% if (!course.videos || course.videos.length === 0) { %>
                                                 <li><span class="dropdown-item text-muted">No videos available</span></li>
                                             <% } else { %>
                                                 <% course.videos.forEach(video => { %>
@@ -118,10 +117,10 @@
                                         <span class="badge bg-info text-dark file-badge dropdown-toggle"
                                               data-bs-toggle="dropdown"
                                               aria-expanded="false">
-                                            <i class="bi bi-file-earmark"></i> <%= course.notes.length %> Notes
+                                            <i class="bi bi-file-earmark"></i> <%= course.notes ? course.notes.length : 0 %> Notes
                                         </span>
                                         <ul class="dropdown-menu">
-                                            <% if (course.notes.length === 0) { %>
+                                            <% if (!course.notes || course.notes.length === 0) { %>
                                                 <li><span class="dropdown-item text-muted">No notes available</span></li>
                                             <% } else { %>
                                                 <% course.notes.forEach(note => { %>
@@ -165,17 +164,5 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Auto-dismiss alerts after 5 seconds
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(alert => {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                });
-            }, 5000);
-        });
-    </script>
 </body>
 </html>

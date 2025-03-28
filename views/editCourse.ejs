@@ -52,14 +52,12 @@
         <form action="/instructor/update-course/<%= course.id %>" method="POST" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="title" class="form-label">Course Title</label>
-                <input type="text" class="form-control" id="title" name="title" 
-                       value="<%= course.title %>" required>
+                <input type="text" class="form-control" id="title" name="title" value="<%= course.title %>" required>
             </div>
             
             <div class="mb-3">
                 <label for="description" class="form-label">Description</label>
-                <textarea class="form-control" id="description" name="description" 
-                          rows="3" required><%= course.description %></textarea>
+                <textarea class="form-control" id="description" name="description" rows="3" required><%= course.description %></textarea>
             </div>
             
             <div class="mb-3">
@@ -69,13 +67,12 @@
                         <% course.videos.forEach(video => { %>
                             <div class="col-md-4 file-item">
                                 <video controls class="file-preview w-100">
-                                    <source src="/uploads/<%= video.video_url %>">
+                                    <source src="/uploads/<%= video %>">
                                 </video>
-                                <button type="button" class="remove-file" 
-                                        onclick="markForRemoval(this, 'video', '<%= video.id %>')">
+                                <button type="button" class="remove-file" onclick="markForRemoval(this, 'video', '<%= video %>')">
                                     <i class="bi bi-x"></i>
                                 </button>
-                                <input type="hidden" name="keep_videos[]" value="<%= video.id %>">
+                                <input type="hidden" name="keep_videos[]" value="<%= video %>">
                             </div>
                         <% }) %>
                     </div>
@@ -92,14 +89,13 @@
                     <div class="list-group">
                         <% course.notes.forEach(note => { %>
                             <div class="list-group-item file-item">
-                                <a href="/uploads/<%= note.note_url %>" target="_blank">
-                                    <%= note.note_url %>
+                                <a href="/uploads/<%= note %>" target="_blank">
+                                    <%= note %>
                                 </a>
-                                <button type="button" class="remove-file" 
-                                        onclick="markForRemoval(this, 'note', '<%= note.id %>')">
+                                <button type="button" class="remove-file" onclick="markForRemoval(this, 'note', '<%= note %>')">
                                     <i class="bi bi-x"></i>
                                 </button>
-                                <input type="hidden" name="keep_notes[]" value="<%= note.id %>">
+                                <input type="hidden" name="keep_notes[]" value="<%= note %>">
                             </div>
                         <% }) %>
                     </div>

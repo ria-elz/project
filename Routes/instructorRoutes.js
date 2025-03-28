@@ -5,7 +5,10 @@ const path = require('path');
 const db = require('../config/db');
 const fs = require('fs').promises;
 const { verifyToken } = require('../middleware/authMiddleware');
+const methodOverride = require('method-override');
 
+// Method override middleware to support PUT and DELETE methods
+router.use(methodOverride('_method'));
 
 // Configure file uploads
 const storage = multer.diskStorage({
@@ -83,20 +86,27 @@ router.post('/create-course', verifyToken, upload.fields([
 });
 
 // GET: Instructor dashboard with courses
+// GET: Instructor dashboard with courses
 router.get('/dashboard', verifyToken, async (req, res) => {
     try {
         const [courses] = await db.query(`
             SELECT 
                 c.*,
-                (SELECT COUNT(*) FROM course_videos WHERE course_id = c.id) AS video_count,
-                (SELECT COUNT(*) FROM course_notes WHERE course_id = c.id) AS note_count
+                COALESCE((SELECT JSON_ARRAYAGG(video_url) FROM course_videos WHERE course_id = c.id), '[]') AS videos,
+                COALESCE((SELECT JSON_ARRAYAGG(note_url) FROM course_notes WHERE course_id = c.id), '[]') AS notes
             FROM courses c
             WHERE c.instructor_id = ?
             ORDER BY c.created_at DESC
         `, [req.user.id]);
 
+        const parsedCourses = courses.map(course => ({
+            ...course,
+            videos: JSON.parse(course.videos),
+            notes: JSON.parse(course.notes)
+        }));
+
         res.render('instructorDashboard', {
-            courses,
+            courses: parsedCourses,
             messages: req.flash()
         });
 
@@ -106,6 +116,7 @@ router.get('/dashboard', verifyToken, async (req, res) => {
         res.redirect('/login');
     }
 });
+
 // View Enrolled Students with Progress
 router.get('/view-enrolled-students/:courseId', verifyToken, async (req, res) => {
     try {
@@ -160,8 +171,8 @@ router.get('/view-enrolled-students/:courseId', verifyToken, async (req, res) =>
         res.status(500).send('Server Error');
     }
 });
+
 // GET: Show edit course form
-// In instructorRoutes.js
 router.get('/edit-course/:id', verifyToken, async (req, res) => {
     try {
         const [course] = await db.query(`
@@ -198,11 +209,10 @@ router.get('/edit-course/:id', verifyToken, async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
+
 // POST: Update course
-// Update course route with file handling
-
-
-
+// POST: Update course
+// POST: Update course
 router.post('/update-course/:id', 
     verifyToken, 
     upload.fields([
@@ -216,6 +226,10 @@ router.post('/update-course/:id',
 
             const { title, description, keep_videos = [], keep_notes = [], removed_videos = [], removed_notes = [] } = req.body;
 
+            // Ensure removed_videos and removed_notes are arrays of IDs
+            const removedVideoIds = removed_videos.map(v => v.id);
+            const removedNoteIds = removed_notes.map(n => n.id);
+
             // 1. Update course details
             await connection.query(
                 `UPDATE courses SET title = ?, description = ? WHERE id = ? AND instructor_id = ?`,
@@ -223,15 +237,15 @@ router.post('/update-course/:id',
             );
 
             // 2. Handle removed videos
-            if (removed_videos.length > 0) {
+            if (removedVideoIds.length > 0) {
                 const [videoRecords] = await connection.query(
                     `SELECT video_url FROM course_videos WHERE id IN (?) AND course_id = ?`,
-                    [removed_videos, req.params.id]
+                    [removedVideoIds, req.params.id]
                 );
                 
                 await connection.query(
                     `DELETE FROM course_videos WHERE id IN (?) AND course_id = ?`,
-                    [removed_videos, req.params.id]
+                    [removedVideoIds, req.params.id]
                 );
 
                 // Delete files from filesystem
@@ -243,15 +257,15 @@ router.post('/update-course/:id',
             }
 
             // 3. Handle removed notes
-            if (removed_notes.length > 0) {
+            if (removedNoteIds.length > 0) {
                 const [noteRecords] = await connection.query(
                     `SELECT note_url FROM course_notes WHERE id IN (?) AND course_id = ?`,
-                    [removed_notes, req.params.id]
+                    [removedNoteIds, req.params.id]
                 );
                 
                 await connection.query(
                     `DELETE FROM course_notes WHERE id IN (?) AND course_id = ?`,
-                    [removed_notes, req.params.id]
+                    [removedNoteIds, req.params.id]
                 );
 
                 // Delete files from filesystem
@@ -300,6 +314,8 @@ router.post('/update-course/:id',
         }
     }
 );
+
+// DELETE: Delete course
 // DELETE: Delete course
 // DELETE: Delete course
 router.delete('/delete-course/:id', verifyToken, async (req, res) => {
@@ -319,4 +335,6 @@ router.delete('/delete-course/:id', verifyToken, async (req, res) => {
     }
 });
 
-module.exports = router;    
+module.exports = router;
+
+module.exports = router;
