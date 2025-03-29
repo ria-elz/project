@@ -27,8 +27,9 @@
     <h1 class="text-center mb-4">Admin Dashboard</h1>
 
     <% if (message) { %>
-        <div class="alert alert-success" role="alert"><%= message %></div>
+        <div class="alert alert-success"><%= message %></div>
     <% } %>
+    
 
     <!-- Add User Section -->
     <div id="addUserSection" class="mb-4">
@@ -72,39 +73,42 @@
         </form>
     </div>
     <!-- All Courses Section -->
-<div class="mb-4">
-    <h2>All Courses</h2>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Course ID</th>
-                <th>Course Title</th>
-                <th>Instructor ID</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="courseTableBody">
-            <% courses.forEach(course => { %>
-                <tr id="course-<%= course.id %>">
-                    <td><%= course.id %></td>
-                    <td><%= course.title %></td>
-                    <td><%= course.instructorId %></td>
-                    <td>
-                        <form action="/admin/deleteCourse/<%= course.id %>?_method=DELETE" method="POST">
-                            <button type="submit" class="btn btn-danger btn-sm">Delete Course</button>
-                        </form>
-                    </td>
+    <div class="mb-4">
+        <h2>All Courses</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Course ID</th>
+                    <th>Course Title</th>
+                    <th>Instructor ID</th>
+                    <th>Actions</th>
                 </tr>
-            <% }) %>
-        </tbody>
-    </table>
-</div>
-
+            </thead>
+            <tbody>
+                <% courses.forEach(course => { %>
+                    <tr>
+                        <td><%= course.course_id %></td> <!-- Use course_id -->
+                        <td><%= course.title %></td>
+                        <td><%= course.instructor_id %></td> <!-- Displaying the Instructor ID -->
+                        <td>
+                            <form action="/admin/delete-course/<%= course.course_id %>?_method=DELETE" method="POST">
+                                <button type="submit" class="btn btn-danger">Delete Course</button>
+                            </form>
+                            
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+    
 
     <!-- All Users Section -->
    <!-- All Users Section -->
 <div class="mb-4">
     <h2>All Users</h2>
+    <% console.log(courses); %>
+
     <table class="table table-striped">
         <thead>
             <tr>
@@ -123,39 +127,42 @@
                     <td><%= user.email %></td>
                     <td><%= user.role %></td>
                     <td>
-                        <form action="/admin/deleteUser/<%= user.id %>?_method=DELETE" method="POST">
-                            <button type="submit" class="btn btn-danger btn-sm">Delete User</button>
-                        </form>
+                        <!-- Button without a form, with data attribute for deletion -->
+                        <button type="button" class="btn btn-danger btn-sm delete-user-btn" data-user-id="<%= user.id %>">
+                            Delete User
+                        </button>
                     </td>
-                    
                 </tr>
             <% }) %>
         </tbody>
+        
     </table>
 </div>
 
 <script>
     // Get all delete buttons
-    document.querySelectorAll('.delete-user-btn').forEach(button => {
+   // JavaScript to handle dynamic user deletion on button click
+document.querySelectorAll('.delete-user-btn').forEach(button => {
     button.addEventListener('click', async function () {
-        const userId = this.getAttribute('data-user-id');  // Retrieve user ID
+        const userId = this.getAttribute('data-user-id'); // Get user ID
+        const userRow = document.getElementById(`user-${userId}`); // Target the row by ID
 
         if (confirm('Are you sure you want to delete this user?')) {
             try {
+                // Make DELETE request to the server
                 const response = await fetch(`/admin/deleteUser/${userId}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                 });
 
-                const data = await response.json();
-                if (data.message) {
-                    alert(data.message);  // Show success message
-                    this.closest('tr').remove();  // Remove user row from table
+                if (response.ok) {
+                    userRow.remove(); // Remove the row from DOM on success
+                    alert('User deleted successfully!');
                 } else {
                     alert('Failed to delete user.');
                 }
-            } catch (err) {
-                console.error('Error:', err);
+            } catch (error) {
+                console.error('Error deleting user:', error);
                 alert('An error occurred while deleting the user.');
             }
         }

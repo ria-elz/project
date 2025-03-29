@@ -177,7 +177,7 @@ const deleteCourseByInstructor = async (req, res) => {
         res.status(500).json({ error: "Error deleting course by instructor" });
     }
 };
-// userController.js
+
 
 
 // Enroll a student in a course

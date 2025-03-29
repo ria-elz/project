@@ -62,11 +62,11 @@
         <% if (errors && errors.length > 0) { %>
             <div class="error-message">
                 <% errors.forEach(function(error) { %>
-                    <p><%= error.msg %></p>
+                    <p><%= error.msg %></p>  <!-- Display each error message -->
                 <% }); %>
             </div>
         <% } %>
-
+        
         <!-- Admin Login Form -->
         <form action="/admin/login" method="POST">
             <div class="form-group">

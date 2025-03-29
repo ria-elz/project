@@ -4,6 +4,8 @@ const router = express.Router();
 const db = require('../config/db');
 const { verifyToken } = require('../middleware/authMiddleware');
 const progressTracking = require('../middleware/progressTracking');
+const path = require('path');
+
 const {
     getUploadedContent,
     enrollInCourse,     // Make sure this is properly defined in userController.js
@@ -40,45 +42,26 @@ router.get('/categories', async (req, res) => {
 
 // Example route handler
 // In studentRoutes.js
-router.get('/student/courses', verifyToken, async (req, res) => {
-    try {
-      // Fetch courses with their videos/notes
-      const [courses] = await db.query(`
-        SELECT 
-          c.*,
-          u.name AS instructor_name,
-          COALESCE(
-            (SELECT JSON_ARRAYAGG(JSON_OBJECT('video_url', video_url) 
-             FROM course_videos 
-             WHERE course_id = c.id), '[]'
-          ) AS videos,
-          COALESCE(
-            (SELECT JSON_ARRAYAGG(JSON_OBJECT('note_url', note_url) 
-             FROM course_notes 
-             WHERE course_id = c.id), '[]'
-          ) AS notes
-        FROM courses c
-        JOIN users u ON c.instructor_id = u.id
-      `);
-  
-      // Parse JSON fields
-      const parsedCourses = courses.map(course => ({
-        ...course,
-        videos: JSON.parse(course.videos),
-        notes: JSON.parse(course.notes)
-      }));
-  
-      // Render template with courses data
-      res.render('studentCategories', {
-        courses: parsedCourses, // Pass courses to EJS
-        user: req.user // Optional: Pass user data if needed
-      });
-  
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-      res.status(500).send('Server Error');
-    }
-  });
+router.get('/student/courses', (req, res) => {
+    const query = 'SELECT * FROM courses';
+    
+    db.query(query, (err, courses) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+        // Render studentCategories.ejs and pass the fetched courses to the template
+        res.render('studentCategories', { courses });
+    });
+});
+
+// Route for serving video with a close button and redirect functionality
+router.get('/watch/:videoFilename', (req, res) => {
+    const videoFilename = req.params.videoFilename;
+    
+    // Render watchVideo.ejs and pass the video filename
+    res.render('watchVideo', { videoFilename });
+});
   
 router.get('/course/:courseId/video/:videoId',
     verifyToken,
@@ -154,31 +137,41 @@ router.get('/student/course/:courseId/video/:videoId', verifyToken, async (req, 
     }
 });
 // studentRoutes.js
-router.get('/student/video/:filename', verifyToken, (req, res) => {
-    try {
-      const filename = req.params.filename;
-      const videoPath = path.join(__dirname, '../uploads', filename);
-      
-      // Verify file exists
-      fs.access(videoPath, fs.constants.F_OK, (err) => {
-        if (err) {
-          console.error('Video file not found:', filename);
-          return res.status(404).send('Video not found');
-        }
+// Video route with verification  
+router.get('/student/video/:filename', verifyToken, (req, res) => {  
+    try {  
+        const filename = req.params.filename;  
+        const videoPath = path.join(__dirname, '../uploads', filename);  
         
-        res.render('videoPlayer', {
-          videoUrl: `/uploads/${filename}`,
-          filename: filename
-        });
-      });
-      
-    } catch (error) {
-      console.error('Video route error:', error);
-      res.status(500).send('Server Error');
-    }
-  });
+        // Check if the video file exists  
+        fs.access(videoPath, fs.constants.F_OK, (err) => {  
+            if (err) {  
+                console.error('Video file not found:', filename);  
+                return res.status(404).send('Video not found');  
+            }  
+            
+            res.render('videoPlayer', {  
+                videoUrl: `/uploads/${filename}`, // Ensure this points to the correct video path  
+                filename: filename  
+            });  
+        });  
+    } catch (error) {  
+        console.error('Video route error:', error);  
+        res.status(500).send('Server Error');  
+    }  
+});  
 // Student: Enroll in a course
 router.post('/enroll', enrollInCourse);  // Maps POST requests to enrollInCourse controller
+// Route to render the video playback page
+// Handle video playback route
+router.get('/watch/:videoFilename', (req, res) => {
+    const videoFilename = req.params.videoFilename;
+
+    // Render the watch.ejs file, passing the video filename
+    res.render('watchVideo', { videoFilename });
+
+});
+
 
 // Student: Track course progress
 router.put('/track-progress', trackProgress);  // Maps PUT requests to trackProgress controller

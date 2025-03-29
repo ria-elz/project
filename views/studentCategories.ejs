@@ -28,11 +28,7 @@
             <i class="bi bi-mortarboard"></i> Student Dashboard
         </a>
         <div class="d-flex">
-           <!-- In studentCategories.ejs -->
-            <!-- Change this -->
-<a href="/student/courses" class="nav-link">Home</a>
-  </a>
-            </a>
+            <a href="/student/courses" class="nav-link">Home</a>
             <a href="/logout" class="btn btn-outline-light">
                 <i class="bi bi-box-arrow-right"></i> Logout
             </a>
@@ -61,11 +57,11 @@
                                                 <div class="list-group-item">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <span><%= video.video_url %></span>
-                                                        <a href="/uploads/<%= video.video_url %>" 
-                                                           class="btn btn-sm btn-outline-primary"
-                                                           target="_blank">
+                                                        <!-- Updated Watch button with dynamic route -->
+                                                        <a href="/student/watch/<%= video.video_url %>" class="btn btn-sm btn-outline-primary">
                                                             <i class="bi bi-play-circle"></i> Watch
                                                         </a>
+                                                        
                                                     </div>
                                                 </div>
                                             <% }) %>
