@@ -14,6 +14,19 @@ const dbConfig = {
 // Create connection pool
 const db = mysql.createPool(dbConfig);
 
+// db.js
+const verifyConnection = async () => {
+    try {
+        const conn = await db.getConnection();
+        await conn.ping();
+        conn.release();
+        console.log('✅ Database connection verified');
+    } catch (err) {
+        console.error('❌ Database connection failed:', err);
+        process.exit(1);
+    }
+};
+
 // Initialize tables with proper error handling
 const initializeDatabase = async () => {
     let connection;
@@ -106,15 +119,7 @@ const initializeDatabase = async () => {
 };
 
 // Verify database connection
-const verifyConnection = async () => {
-    try {
-        const [rows] = await db.query('SELECT 1 + 1 AS result');
-        console.log("Database connection verified. Result:", rows[0].result);
-    } catch (err) {
-        console.error("Database connection failed:", err);
-        process.exit(1);
-    }
-};
+// (This function is already defined earlier, so this duplicate is removed)
 
 // Initialize database with connection verification
 (async () => {

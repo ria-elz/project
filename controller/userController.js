@@ -59,43 +59,30 @@ const addUserByAdmin = async (req, res) => {
 // Admin - Delete User (with req and res)
 // Controller function for deleting user
 const deleteUserByAdmin = async (req, res) => {
-    // Ensure we're not sending multiple responses
     try {
         const userId = req.params.userId;
 
-        // Validate userId
         if (!userId) {
             return res.status(400).json({ error: 'User ID is required' });
         }
 
-        // Prevent multiple response sends
-        if (res.headersSent) {
-            console.warn('Headers already sent before deletion');
-            return;
-        }
+        // First, delete all enrollments for the user
+        await db.query('DELETE FROM enrollments WHERE user_id = ?', [userId]);
 
-        // Perform deletion
+        // Then, delete the user
         const [result] = await db.query('DELETE FROM users WHERE id = ?', [userId]);
 
-        // Check if any rows were affected
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Send success response only once
-        res.status(200).json({ 
-            message: 'User deleted successfully', 
-            deletedUserId: userId 
-        });
+        return res.status(200).json({ message: 'User deleted successfully', deletedUserId: userId });
+
     } catch (error) {
         console.error('Error deleting user:', error);
-        
-        // Ensure we only send a response if headers haven't been sent
+
         if (!res.headersSent) {
-            res.status(500).json({ 
-                error: 'Server error while deleting user',
-                details: error.message 
-            });
+            return res.status(500).json({ error: 'Server error while deleting user', details: error.message });
         }
     }
 };
@@ -183,17 +170,35 @@ const deleteCourseByInstructor = async (req, res) => {
 // Enroll a student in a course
 const enrollInCourse = async (req, res) => {
     try {
-        const userId = req.user.id; // Use authenticated user ID
+        const userId = req.user.id;
         const { courseId } = req.body;
+        console.log("Enroll request received. userId:", userId, "courseId:", courseId);
         
-        await db.query(
-            'INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)',
+        if (!courseId) {
+            console.error("Enrollment error: Missing courseId");
+            return res.status(400).send("Course ID is required.");
+        }
+        
+        // Check if already enrolled
+        const [existing] = await db.query(
+            "SELECT * FROM enrollments WHERE user_id = ? AND course_id = ?",
             [userId, courseId]
         );
-        res.status(200).json({ message: "Enrolled successfully!" });
+        if (existing && existing.length > 0) {
+            console.warn("User already enrolled in course", courseId);
+            return res.redirect('/student/categories'); // already enrolled
+        }
+        
+        // Insert new enrollment record
+        const [result] = await db.query(
+            "INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)",
+            [userId, courseId]
+        );
+        console.log("Enrollment inserted, result:", result);
+        res.redirect('/student/categories');
     } catch (error) {
         console.error("Enrollment error:", error);
-        res.status(500).json({ error: "Enrollment failed" });
+        res.status(500).send("Enrollment failed: " + error.message);
     }
 };
 

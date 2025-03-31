@@ -11,17 +11,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 // Render login and register pages
 router.get('/login', (req, res) => res.render('login', { 
     errors: [],
-    message: req.flash('message') 
+    message: req.flash('message')
 }));
 
 router.get('/register', (req, res) => res.render('register', { 
-    errors: [], 
-    name: '', 
-    email: '' 
+    errors: [],
+    name: '',
+    email: ''
 }));
 
-router.get('/admin/login', (req, res) => res.render('adminLogin', { 
-    errors: [] 
+router.get('/admin/login', (req, res) => res.render('adminLogin', {
+    errors: []
 }));
 
 // Registration logic
@@ -33,22 +33,22 @@ router.post('/register', [
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.render('register', { 
-            errors: errors.array(), 
-            name: req.body.name, 
-            email: req.body.email 
+        return res.render('register', {
+            errors: errors.array(),
+            name: req.body.name,
+            email: req.body.email
         });
     }
 
     try {
         const { name, email, password, role } = req.body;
         const existingUser = await userModel.getUserByEmail(email);
-        
+
         if (existingUser) {
-            return res.render('register', { 
-                errors: [{ msg: 'User already exists. Please log in.' }], 
-                name, 
-                email 
+            return res.render('register', {
+                errors: [{ msg: 'User already exists. Please log in.' }],
+                name,
+                email
             });
         }
 
@@ -58,7 +58,7 @@ router.post('/register', [
         res.redirect('/login');
     } catch (err) {
         console.error("Registration Error:", err);
-        res.status(500).render('register', { 
+        res.status(500).render('register', {
             errors: [{ msg: "Server error. Please try again later." }],
             name: req.body.name,
             email: req.body.email
@@ -73,39 +73,39 @@ router.post('/login', [
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.render('login', { 
-            errors: errors.array() 
+        return res.render('login', {
+            errors: errors.array()
         });
     }
 
     try {
         const { email, password } = req.body;
         const user = await userModel.getUserByEmail(email);
-        
+
         if (!user) {
-            return res.render('login', { 
-                errors: [{ msg: "Invalid credentials" }] 
+            return res.render('login', {
+                errors: [{ msg: "Invalid credentials" }]
             });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.render('login', { 
-                errors: [{ msg: "Invalid credentials" }] 
+            return res.render('login', {
+                errors: [{ msg: "Invalid credentials" }]
             });
         }
 
-        const token = jwt.sign({ 
-            id: user.id, 
-            name: user.name, 
-            role: user.role 
+        const token = jwt.sign({
+            id: user.id,
+            name: user.name,
+            role: user.role
         }, JWT_SECRET, { expiresIn: '1h' });
 
-        res.cookie('token', token, { 
+        res.cookie('token', token, {
             httpOnly: true,
             maxAge: 3600000 // 1 hour
         });
-        
+
         // Set user in session
         req.session.user = {
             id: user.id,
@@ -125,8 +125,8 @@ router.post('/login', [
         }
     } catch (err) {
         console.error("Login Error:", err);
-        res.status(500).render('login', { 
-            errors: [{ msg: "Server error. Please try again." }] 
+        res.status(500).render('login', {
+            errors: [{ msg: "Server error. Please try again." }]
         });
     }
 });
@@ -141,29 +141,29 @@ router.post('/admin/login', [
         const user = await userModel.getUserByEmail(email);
 
         if (!user || user.role !== 'admin') {
-            return res.render('adminLogin', { 
-                errors: [{ msg: "Invalid admin credentials" }] 
+            return res.render('adminLogin', {
+                errors: [{ msg: "Invalid admin credentials" }]
             });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.render('adminLogin', { 
-                errors: [{ msg: "Invalid admin credentials" }] 
+            return res.render('adminLogin', {
+                errors: [{ msg: "Invalid admin credentials" }]
             });
         }
 
-        const token = jwt.sign({ 
-            id: user.id, 
-            name: user.name, 
-            role: user.role 
+        const token = jwt.sign({
+            id: user.id,
+            name: user.name,
+            role: user.role
         }, JWT_SECRET, { expiresIn: '1h' });
 
-        res.cookie('token', token, { 
+        res.cookie('token', token, {
             httpOnly: true,
             maxAge: 3600000
         });
-        
+
         req.session.user = {
             id: user.id,
             name: user.name,
@@ -174,10 +174,21 @@ router.post('/admin/login', [
         res.redirect('/admin/dashboard');
     } catch (err) {
         console.error("Admin Login Error:", err);
-        res.status(500).render('adminLogin', { 
-            errors: [{ msg: "Server error" }] 
+        res.status(500).render('adminLogin', {
+            errors: [{ msg: "Server error" }]
         });
     }
+});
+
+// Logout Route
+router.get('/logout', (req, res) => {
+    res.clearCookie('token');
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Error destroying session during logout:', err);
+        }
+        res.redirect('/login');
+    });
 });
 
 module.exports = router;

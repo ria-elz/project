@@ -34,18 +34,20 @@ const enrollInCourse = async (userId, courseId) => {
 // Get user progress across enrolled courses
 const getUserProgress = async (userId) => {
     try {
-        const [rows] = await db.query(`
-            SELECT c.title, cp.progress 
+        const [rows] = await db.query(
+            `SELECT c.title, cp.progress 
             FROM course_progress cp 
             INNER JOIN courses c ON cp.course_id = c.id 
-            WHERE cp.user_id = ?
-        `, [userId]);
+            WHERE cp.user_id = ?`,
+            [userId]
+        );
         return rows;
     } catch (err) {
         console.error("Error fetching user progress:", err);
         throw err;
     }
 };
+
 
 // Create a course with videos and notes (as JSON arrays)
 const createCourse = async (courseData) => {
@@ -59,20 +61,23 @@ const createCourse = async (courseData) => {
             `INSERT INTO courses (instructor_id, title, description) VALUES (?, ?, ?)`,
             [instructorId, courseTitle, description]
         );
+        
         const courseId = result.insertId;
 
         // Process files through separate tables
         const processFiles = async (files, tableName) => {
             if (files && files.length > 0) {
+                const columnName = tableName === 'course_videos' ? 'video_url' : 'note_url';
+        
                 await Promise.all(files.map(async (file) => {
                     await connection.query(
-                        `INSERT INTO ${tableName} (course_id, ${tableName === 'course_videos' ? 'video_url' : 'note_url'}) 
-                        VALUES (?, ?)`,
+                        `INSERT INTO ${tableName} (course_id, ${columnName}) VALUES (?, ?)`,
                         [courseId, file]
                     );
                 }));
             }
         };
+        
 
         await processFiles(courseData.videos, 'course_videos');
         await processFiles(courseData.notes, 'course_notes');

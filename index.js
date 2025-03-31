@@ -5,6 +5,8 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 require('dotenv').config();
+const privacyRoutes = require("./Routes/privacyRoutes"); // ✅ Import privacy route
+const termsRoutes = require("./Routes/termsRoutes"); // ✅ Import terms route
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -18,7 +20,14 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(methodOverride('_method')); // Method override middleware
+app.use(methodOverride(function (req, res) {
+    if (req.body && typeof req.body === 'object' && '_method' in req.body) {
+      let method = req.body._method;
+      delete req.body._method;
+      return method;
+    }
+  }));
+   // Method override middleware
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
@@ -43,11 +52,20 @@ const loginRoutes = require('./Routes/loginRoutes');
 const adminRoutes = require('./Routes/adminRoutes');
 const instructorRoutes = require('./Routes/instructorRoutes');
 const studentRoutes = require('./Routes/studentRoutes');
+const courseRoutes = require("./Routes/courseRoutes");
 
 app.use('/', loginRoutes);
 app.use('/admin', adminRoutes);
 app.use('/instructor', instructorRoutes);
 app.use('/student', studentRoutes);
+app.use(courseRoutes);
+app.use("/", privacyRoutes); // ✅ Attach privacy policy route
+app.use('/terms', termsRoutes);
+
+app.get('/contact', (req, res) => {
+    res.render('contact'); // This renders the contact.ejs file
+});
+
 
 // Basic routes
 app.get('/', (req, res) => res.render('index'));
@@ -81,6 +99,19 @@ app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     next();
 });
+
+// app.js
+app.use((err, req, res, next) => {
+    console.error('⚠️ Server Error:', err.stack);
+    res.status(500).render('error', { 
+        message: err.message || 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err : {}
+    });
+});
+// Adjust path if needed
+
+
+
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

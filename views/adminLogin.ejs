@@ -59,13 +59,14 @@
     <div class="login-container">
         <h2 class="login-title">Admin Login</h2>
 
-        <% if (errors && errors.length > 0) { %>
+        <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
             <div class="error-message">
                 <% errors.forEach(function(error) { %>
-                    <p><%= error.msg %></p>  <!-- Display each error message -->
+                    <p><%= error.msg %></p>
                 <% }); %>
             </div>
         <% } %>
+        
         
         <!-- Admin Login Form -->
         <form action="/admin/login" method="POST">
