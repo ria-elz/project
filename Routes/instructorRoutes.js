@@ -167,5 +167,152 @@ router.delete('/course/:id', verifyToken, async (req, res) => {
         connection.release();
     }
 });
+// GET: Load edit course form
+router.get('/edit-course/:courseId', verifyToken, async (req, res) => {
+    try {
+        // Fetch course details
+        const [courseResult] = await db.query('SELECT * FROM courses WHERE id = ?', [req.params.courseId]);
+        
+        if (!courseResult.length) {
+            return res.status(404).send('Course not found.');
+        }
+
+        // Verify the instructor owns this course
+        if (courseResult[0].instructor_id !== req.user.id) {
+            req.flash('error', 'You do not have permission to edit this course.');
+            return res.redirect('/instructor/dashboard');
+        }
+
+        // Fetch videos and notes associated with the course
+        const [videosResult] = await db.query('SELECT video_url FROM course_videos WHERE course_id = ?', [req.params.courseId]);
+        const [notesResult] = await db.query('SELECT id, note_url FROM course_notes WHERE course_id = ?', [req.params.courseId]);
+
+        // Render the edit form
+        res.render('editCourse', { 
+            course: courseResult[0],
+            videos: videosResult.map(v => v.video_url),
+            notes: notesResult,
+            messages: req.flash()
+        });
+    } catch (error) {
+        console.error('Error fetching course:', error);
+        req.flash('error', 'Failed to load course.');
+        res.redirect('/instructor/dashboard');
+    }
+});
+
+// 🔹 View Enrolled Students Route
+router.get('/view-enrolled-students/:courseId', async (req, res) => {
+    const { courseId } = req.params;
+
+    try {
+        // Fetch course details
+        const [course] = await db.query('SELECT * FROM courses WHERE id = ?', [courseId]);
+        if (course.length === 0) {
+            return res.status(404).send('Course not found');
+        }
+
+        // Fetch enrolled students
+        const [students] = await db.query(`
+            SELECT users.id, users.name, users.email 
+            FROM enrollments 
+            JOIN users ON enrollments.user_id = users.id 
+            WHERE enrollments.course_id = ?`, [courseId]);
+
+        res.render('viewStudents', { course: course[0], students });
+    } catch (error) {
+        console.error('Error fetching enrolled students:', error);
+        res.status(500).send('Server error.');
+    }
+});
+
+
+// PUT: Update course details
+// PUT: Update course details
+router.put('/update-course/:courseId', verifyToken, upload.fields([
+    { name: 'videos', maxCount: 5 },
+    { name: 'notes', maxCount: 5 }
+]), async (req, res) => {
+    const { courseId } = req.params;
+    const { title, description, deletedNotes, deletedVideos } = req.body;
+    
+    try {
+        // 1. Update course basic info
+        await db.query(
+            'UPDATE courses SET title = ?, description = ? WHERE id = ? AND instructor_id = ?',
+            [title, description, courseId, req.user.id]
+        );
+        
+        // 2. Handle deleted notes if any
+        if (deletedNotes && deletedNotes.length > 0) {
+            const notesToDelete = deletedNotes.split(',');
+            for (const noteId of notesToDelete) {
+                if (noteId) {
+                    // Get the file path before deleting from DB
+                    const [noteResult] = await db.query('SELECT note_url FROM course_notes WHERE id = ?', [noteId]);
+                    if (noteResult.length > 0) {
+                        // Delete file from filesystem
+                        try {
+                            await fs.unlink(path.join(__dirname, '../uploads', noteResult[0].note_url));
+                        } catch (err) {
+                            console.error('Error deleting note file:', err);
+                        }
+                        // Delete from database
+                        await db.query('DELETE FROM course_notes WHERE id = ?', [noteId]);
+                    }
+                }
+            }
+        }
+        
+        // 3. Handle deleted videos if any
+        if (deletedVideos && deletedVideos.length > 0) {
+            const videosToDelete = deletedVideos.split(',');
+            for (const videoPath of videosToDelete) {
+                if (videoPath) {
+                    // Delete file from filesystem
+                    try {
+                        await fs.unlink(path.join(__dirname, '../uploads', videoPath));
+                    } catch (err) {
+                        console.error('Error deleting video file:', err);
+                    }
+                    // Delete from database
+                    await db.query('DELETE FROM course_videos WHERE video_url = ?', [videoPath]);
+                }
+            }
+        }
+        
+        // 4. Upload new files if any
+        if (req.files) {
+            // Handle new videos
+            if (req.files.videos) {
+                for (const video of req.files.videos) {
+                    await db.query(
+                        'INSERT INTO course_videos (course_id, video_url, title) VALUES (?, ?, ?)',
+                        [courseId, video.filename, path.basename(video.originalname, path.extname(video.originalname))]
+                    );
+                }
+            }
+            
+            // Handle new notes
+          // Handle new notes
+if (req.files.notes) {
+    for (const note of req.files.notes) {
+        // Use db.query instead of pool.query
+        await db.query(
+            "INSERT INTO course_notes (course_id, note_url) VALUES (?, ?)",
+            [courseId, note.filename] // Use the actual filename from multer
+        );
+    }
+}
+        }
+        
+        req.flash('success', 'Course updated successfully');
+        res.redirect('/instructor/dashboard');
+    } catch (error) {
+        console.error('Update error:', error);
+        req.flash('error', 'Failed to update course');
+        res.redirect(`/instructor/edit-course/${courseId}`);
+    }
+});
 
 module.exports = router;

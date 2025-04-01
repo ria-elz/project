@@ -26,8 +26,7 @@ app.use(methodOverride(function (req, res) {
       delete req.body._method;
       return method;
     }
-  }));
-   // Method override middleware
+}));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
@@ -66,7 +65,6 @@ app.get('/contact', (req, res) => {
     res.render('contact'); // This renders the contact.ejs file
 });
 
-
 // Basic routes
 app.get('/', (req, res) => res.render('index'));
 app.get('/home', (req, res) => res.render('home'));
@@ -87,32 +85,12 @@ app.use((req, res) => {
     });
 });
 
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).render('error', { 
-        message: err.message || 'Something went wrong!',
-        error: process.env.NODE_ENV === 'development' ? err : {}
-    });
-});
-
 app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     next();
 });
 
-// app.js
-app.use((err, req, res, next) => {
-    console.error('⚠️ Server Error:', err.stack);
-    res.status(500).render('error', { 
-        message: err.message || 'Something went wrong!',
-        error: process.env.NODE_ENV === 'development' ? err : {}
-    });
-});
-// Adjust path if needed
-
-
-
-
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
