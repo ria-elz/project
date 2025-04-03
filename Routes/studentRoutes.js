@@ -14,10 +14,11 @@ const {
 } = require('../controller/userController');
 
 // 🔹 Fetch Course Categories
+// 🔹 Fetch Course Categories
 router.get('/categories', verifyToken, async (req, res) => {
     try {
         const [courses] = await db.query(`
-            SELECT c.*, u.name AS instructor_name,
+            SELECT c.*, u.name AS instructor_name, c.image AS course_image, 
                    (SELECT JSON_ARRAYAGG(JSON_OBJECT('video_url', cv.video_url))
                     FROM course_videos cv WHERE cv.course_id = c.id) AS videos,
                    (SELECT JSON_ARRAYAGG(JSON_OBJECT('note_url', cn.note_url))
@@ -36,7 +37,8 @@ router.get('/categories', verifyToken, async (req, res) => {
             ...course,
             isEnrolled: enrolledCourseIds.includes(course.id),
             videos: typeof course.videos === 'string' ? JSON.parse(course.videos) : (course.videos || []),
-            notes: typeof course.notes === 'string' ? JSON.parse(course.notes) : (course.notes || [])
+            notes: typeof course.notes === 'string' ? JSON.parse(course.notes) : (course.notes || []),
+            image: course.course_image // Add the image field here
         }));
 
         res.render('studentCategories', { courses: coursesWithEnrollment, user: req.user });

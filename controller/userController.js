@@ -7,55 +7,37 @@ const { createCourse } = require('../model/courseModel');
 
 
 // Admin - Add User with Role
+
+
 const addUserByAdmin = async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
-        
-        // Validate input
-        if (!name || !email || !password || !role) {
-            // Return early if validation fails
-            return res.status(400).json({ error: "All fields are required" });
+
+        // Check if the email already exists
+        const [existingUser] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (existingUser.length > 0) {
+            req.flash('error', 'Email already exists');
+            return res.redirect('/admin/dashboard');
         }
 
-        // Prevent multiple response sends
-        if (res.headersSent) {
-            console.warn('Headers already sent before user creation');
-            return null;
-        }
-
-        // Hash password
+        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // Prepare user object
-        const newUser = { 
-            name, 
-            email, 
-            password: hashedPassword, 
-            role 
-        };
 
-        // Insert user
-        const [result] = await db.query('INSERT INTO users SET ?', newUser);
+        // Insert the new user into the database
+        await db.query(
+            'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+            [name, email, hashedPassword, role]
+        );
 
-        // Return success indication
-        return {
-            success: true,
-            userId: result.insertId
-        };
+        req.flash('success', 'User added successfully');
+        return res.redirect('/admin/dashboard');
     } catch (error) {
-        console.error("Error adding user by admin:", error);
-        
-        // Only send error response if headers haven't been sent
-        if (!res.headersSent) {
-            return res.status(500).json({ 
-                error: "Server error", 
-                details: error.message 
-            });
-        }
-        
-        return null;
+        console.error('Error adding user by admin:', error);
+        req.flash('error', 'Failed to add user');
+        return res.redirect('/admin/dashboard');
     }
 };
+
 // Admin - Delete User (with req and res)
 // Controller function for deleting user
 const deleteUserByAdmin = async (req, res) => {

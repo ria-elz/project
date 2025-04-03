@@ -49,18 +49,31 @@ router.get('/create-course', verifyToken, (req, res) => {
 });
 
 // POST: Handle course creation
+// POST: Handle course creation with image upload
+router.get('/create-course', verifyToken, (req, res) => {
+    res.render('createCourse', { 
+        user: req.user,
+        messages: req.flash() 
+    });
+});
+
+// POST: Handle course creation with image upload
 router.post('/create-course', verifyToken, upload.fields([
     { name: 'videos', maxCount: 5 },
-    { name: 'notes', maxCount: 5 }
+    { name: 'notes', maxCount: 5 },
+    { name: 'image', maxCount: 1 } // Add image field here
 ]), async (req, res) => {
     try {
         const { courseTitle, description } = req.body;
         const instructorId = req.user.id;
 
+        // Handle image upload (default image if none uploaded)
+        const image = req.files.image ? `/uploads/${req.files.image[0].filename}` : '/uploads/default.jpg';
+
         // Insert course into the courses table
         const [courseResult] = await db.query(
-            'INSERT INTO courses (instructor_id, title, description) VALUES (?, ?, ?)',
-            [instructorId, courseTitle, description]
+            'INSERT INTO courses (instructor_id, title, description, image) VALUES (?, ?, ?, ?)',
+            [instructorId, courseTitle, description, image]
         );
         const courseId = courseResult.insertId;
 
@@ -88,9 +101,11 @@ router.post('/create-course', verifyToken, upload.fields([
             );
         }
 
-        res.json({ success: true, courseId });
+        req.flash('success', 'Course created successfully!');
+        res.status(200).json({ success: true, message: 'Course created successfully!' });
     } catch (error) {
         console.error('Create Course Error:', error);
+        req.flash('error', 'Failed to create course');
         res.status(500).json({ success: false, error: 'Failed to create course' });
     }
 });
