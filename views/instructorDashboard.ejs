@@ -32,11 +32,10 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            color: white;
             min-height: 200px;
             position: relative;
             max-width: 410px;
-            margin: auto
+            margin: auto;
         }
         .course-card:hover {
             transform: translateY(-5px);
@@ -47,6 +46,26 @@
             padding: 1.5rem;
             border-radius: 10px;
         }
+        .course-card .card-footer {
+            background: rgba(0, 0, 0, 0.7);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0 0 10px 10px;
+            padding: 0.75rem 1.5rem;
+        }
+        .course-card .card-footer small,
+        .course-card .card-footer a {
+            color: #ffffff;
+        }
+        .course-card .card-footer small {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 0.25rem 0.5rem;
+            border-radius: 5px;
+        }
+        .course-card .card-footer a {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 0.25rem 0.5rem;
+            border-radius: 5px;
+        }
         .file-badge {
             font-size: 0.85rem;
             cursor: pointer;
@@ -54,6 +73,21 @@
         .dropdown-menu {
             max-height: 200px;
             overflow-y: auto;
+        }
+        .premium-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #ffc107;
+            color: #212529;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        .premium-badge i {
+            margin-right: 5px;
         }
     </style>
 </head>
@@ -80,7 +114,12 @@
                 <% courses.forEach(course => { %>
                     <div class="col">
                         <div class="card course-card h-100 shadow-sm" 
-                             style="background-image: url('https://tse2.mm.bing.net/th?id=OIP.yEYJQYu0PS2Aq5-YpjR3QQHaE8&pid=Api&P=0&h=180');">
+                             style="background-image: url('https://tse3.mm.bing.net/th?id=OIP.r3yOGT7aYQyFhtjEc1DkWQHaEc&pid=Api&P=0&h=180');">
+                            <% if (course.isPremium === true || course.is_premium === true) { %>
+                                <div class="premium-badge">
+                                    <i class="bi bi-lock-fill"></i> Premium
+                                </div>
+                            <% } %>
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <h4 class="card-title text-light"><%= course.title %></h4>

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db'); // Ensure this is the correct path
 const { verifyToken } = require('../middleware/authMiddleware');
-
+const { getAllCourses, getCourseById, enrollInCourse, getUserProgress, createCourse, deleteCourse, updateCourse } = require('../model/courseModel');
 // 🔹 Fetch All Available Courses
 router.get('/', async (req, res) => {
     try {
@@ -13,7 +13,15 @@ router.get('/', async (req, res) => {
         res.status(500).send('Server error.');
     }
 });
-
+router.get('/instructor/dashboard', async (req, res) => {
+    try {
+        const [courses] = await db.query('SELECT * FROM courses WHERE instructor_id = ?', [req.session.user.id]);
+        res.render('instructorDashboard', { courses });
+    } catch (err) {
+        console.error('Error fetching instructor courses:', err);
+        res.status(500).send('Server error.');
+    }
+});
 // 🔹 Enroll in a Course
 router.post('/enroll/:courseId', async (req, res) => {
     const { courseId } = req.params;
@@ -78,5 +86,40 @@ router.get('/search-courses', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+router.post('/create-course', async (req, res) => {
+    const courseData = {
+        instructorId: req.session.user.id,
+        courseTitle: req.body.courseTitle,
+        description: req.body.description,
+        isPremium: req.body.isPremium ? 1 : 0,
+        videos: req.files.videos ? req.files.videos.map(file => file.filename) : [],
+        notes: req.files.notes ? req.files.notes.map(file => file.filename) : []
+    };
+
+    try {
+        await createCourse(courseData);
+        res.redirect('/instructor/dashboard');
+    } catch (err) {
+        console.error('Error creating course:', err);
+        res.status(500).send('Server error.');
+    }
+});
+
+router.put('/update-course/:id', async (req, res) => {
+    const courseData = {
+        title: req.body.title,
+        description: req.body.description,
+        isPremium: req.body.isPremium ? 1 : 0
+    };
+
+    try {
+        await updateCourse(req.params.id, courseData);
+        res.redirect('/instructor/dashboard');
+    } catch (err) {
+        console.error('Error updating course:', err);
+        res.status(500).send('Server error.');
+    }
+});
+
 
 module.exports = router;

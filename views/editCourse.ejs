@@ -154,6 +154,11 @@
                         <label for="description" class="form-label">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="4" required><%= course.description %></textarea>
                     </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="isPremium" name="isPremium" <%= course.isPremium ? 'checked' : '' %>>
+                        <label class="form-check-label" for="isPremium">Premium Course</label>
+                    </div>
                 </div>
 
                 <!-- Videos Section -->

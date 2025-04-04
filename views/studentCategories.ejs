@@ -37,10 +37,6 @@
             padding-top: 40px;
         }
 
-        .row-cols-1 > .col {
-            margin-bottom: 2rem; /* Added space between cards */
-        }
-
         .course-card {
             background-color: white;
             border-radius: 10px;
@@ -50,15 +46,13 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            height: 450px; /* Adjusted height */
-            width: 350px; /* Adjusted width */
-            margin: 0 auto; /* Center the card */
+            margin: 0 auto;
         }
 
         .course-card img {
             border-radius: 10px;
             width: 100%;
-            height: 150px; /* Adjusted height */
+            height: 150px;
             object-fit: cover;
         }
 
@@ -67,11 +61,11 @@
         }
 
         .course-card h3 {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
         }
 
         .course-card i {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             color: #007bff;
         }
 
@@ -79,32 +73,99 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 5px;
         }
 
-        .content-list {
-            max-height: 100px;
-            overflow-y: auto;
-        }
-
-        .btn-watch {
-            font-size: 0.9rem;
+        .btn-watch,
+        .btn-unlock {
+            font-size: 0.8rem;
         }
 
         .course-footer {
             background-color: white;
-            padding: 10px;
+            padding: 8px;
             border-top: 1px solid #e6e6e6;
-            margin-top: auto; /* Ensure footer stays at the bottom */
+            margin-top: auto;
         }
 
-        /* Footer */
         .footer {
             background-color: #1C1D1F;
             color: white;
             padding: 20px;
             text-align: center;
             margin-top: 60px;
+        }
+
+        .course-details-expanded {
+            background-color: #f8f9fa;
+            border-top: 1px solid #e6e6e6;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .course-details-expanded h5 {
+            margin-top: 10px;
+        }
+
+        .btn-enroll {
+            margin-top: 10px;
+        }
+
+        /* Heading Styling */
+        .heading-icon {
+            font-size: 2.5rem;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .main-heading {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #1C1D1F;
+            position: relative;
+        }
+
+        .main-heading::after {
+            content: '';
+            width: 200px;
+            height: 5px;
+            background: #007bff;
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 5px;
+        }
+
+        .sub-heading {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #1C1D1F;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .locked-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            z-index: 10;
+        }
+
+        .locked-overlay .btn-unlock {
+            background-color: #007bff;
+            border: none;
+            color: white;
         }
     </style>
 </head>
@@ -119,6 +180,7 @@
         
         <div class="d-flex">
             <a href="/student/courses" class="nav-link">Home</a>
+            <a href="/contact" class="btn btn-outline-light me-2"><i class="bi bi-box-arrow-right"></i> Contact Us</a>
             <a href="/logout" class="btn btn-outline-light">
                 <i class="bi bi-box-arrow-right"></i> Logout
             </a>
@@ -128,85 +190,131 @@
 
 <!-- Course Catalog Section -->
 <div class="container">
-    <h1 class="text-center mb-4"><i class="bi bi-collection"></i> Explore Courses</h1>
+    <h1 class="main-heading">
+        <i class="bi bi-collection heading-icon"></i> Explore Courses
+    </h1>
     
     <% if (courses && courses.length > 0) { %>
-        <div class="row row-cols-1 row-cols-md-4 g-4">
-            <% courses.forEach(course => { %>
-                <div class="col">
-                    <!-- Updated card with background image -->
+        <!-- Enrolled Courses -->
+        <h2 class="sub-heading">
+            <i class="bi bi-bookmark-check-fill heading-icon"></i> Enrolled Courses
+        </h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <% courses.filter(course => course.isEnrolled).forEach(course => { %>
+                <div class="col mb-4">
                     <div class="card course-card">
-                        <img src="<%= course.image %>" alt="<%= course.title %>">
-
+                        <% if (course.isPremium && !course.isUnlocked) { %>
+                            <div class="locked-overlay">
+                                <button class="btn btn-unlock" onclick="window.location.href='/student/unlock/<%= course.id %>'">Unlock</button>
+                            </div>
+                        <% } %>
+                        <img src='https://tse3.mm.bing.net/th?id=OIP.oKvhH_N838tGsPKJbd5AIQHaEK&pid=Api&P=0&h=180'  alt="Course Image">
                         <div class="card-body">
                             <h3 class="card-title"><%= course.title %></h3>
                             <p class="card-text text-muted"><%= course.description %></p>
-                            
                             <div class="course-details">
                                 <div>
-                                    <span class="badge bg-primary">Premium</span>
-                                    <span class="badge bg-success">Bestseller</span>
+                                    <span class="badge bg-success">Go Ahead</span>
+                                    <% if (course.isPremium) { %>
+                                        <span class="badge bg-warning text-dark">Premium</span>
+                                    <% } %>
                                 </div>
                                 <div>
-                                    <span class="text-warning"><i class="bi bi-star-fill"></i> 4.5</span>
+                                    <span class="text-warning"><i class="bi bi-star-fill"></i>4.5</span>
                                 </div>
                             </div>
-
-                            <% if (!course.isEnrolled) { %>
-                                <form action="/student/enroll" method="POST">
-                                    <input type="hidden" name="courseId" value="<%= course.id || course.course_id %>">
-                                    <button type="submit" class="btn btn-primary mt-2">Enroll</button>
-                                </form>
-                            <% } else { %>
-                                <div class="mt-3">
-                                    <h5><i class="bi bi-camera-video" style="font-size: 1.2rem;"></i> Course Videos</h5>
-                                    <div class="content-list mb-3">
+                            <div class="course-details-expanded">
+                                <h5>
+                                    <button class="btn btn-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-camera-video" style="font-size: 1.2rem;"></i> Course Videos
+                                    </button>
+                                    <ul class="dropdown-menu">
                                         <% if (course.videos && course.videos.length > 0) { %>
-                                            <div class="list-group">
-                                                <% course.videos.forEach(video => { %>
-                                                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                                                        <span><%= video.video_url %></span>
-                                                        <a href="/student/watch/<%= video.video_url %>" class="btn btn-sm btn-outline-primary btn-watch">
-                                                            <i class="bi bi-play-circle"></i> Watch
-                                                        </a>
-                                                    </div>
-                                                <% }) %>
-                                            </div>
+                                            <% course.videos.forEach(video => { %>
+                                                <li>
+                                                    <a class="dropdown-item <%= course.isPremium && !course.isUnlocked ? 'disabled' : '' %>" href="/student/watch/<%= video.video_url %>">
+                                                        <i class="bi bi-play-circle"></i> <%= video.video_url %>
+                                                    </a>
+                                                </li>
+                                            <% }) %>
                                         <% } else { %>
-                                            <div class="alert alert-info">No videos available</div>
+                                            <li>
+                                                <span class="dropdown-item-text">No videos available</span>
+                                            </li>
                                         <% } %>
-                                    </div>
-            
-                                    <h5><i class="bi bi-file-earmark" style="font-size: 1.2rem;"></i> Course Notes</h5>
-                                    <div class="content-list">
+                                    </ul>
+                                </h5>
+                                <h5>
+                                    <button class="btn btn-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-file-earmark" style="font-size: 1.2rem;"></i> Course Notes
+                                    </button>
+                                    <ul class="dropdown-menu">
                                         <% if (course.notes && course.notes.length > 0) { %>
-                                            <div class="list-group">
-                                                <% course.notes.forEach(note => { %>
-                                                    <a href="/uploads/<%= note.note_url %>" 
-                                                       class="list-group-item list-group-item-action"
-                                                       target="_blank"
-                                                       download>
+                                            <% course.notes.forEach(note => { %>
+                                                <li>
+                                                    <a class="dropdown-item <%= course.isPremium && !course.isUnlocked ? 'disabled' : '' %>" href="/uploads/<%= note.note_url %>" target="_blank" download>
                                                         <i class="bi bi-download"></i> <%= note.note_url %>
                                                     </a>
-                                                <% }) %>
-                                            </div>
+                                                </li>
+                                            <% }) %>
                                         <% } else { %>
-                                            <div class="alert alert-info">No notes available</div>
+                                            <li>
+                                                <span class="dropdown-item-text">No notes available</span>
+                                            </li>
                                         <% } %>
-                                    </div>
-                                </div>
-                            <% } %>
+                                    </ul>
+                                </h5>
+                            </div>
                         </div>
                         <div class="course-footer">
-                            <small>
-                                Instructor: <%= course.instructor_name %> | 
-                                Created: <%= new Date(course.created_at).toLocaleDateString() %>
-                            </small>
+                            <small>Instructor: <%= course.instructor_name %> | 
+                            Created: <%= new Date(course.created_at).toLocaleDateString() %></small>
                         </div>
                     </div>
                 </div>
             <% }); %>
-            
+        </div>
+
+        <!-- Courses to Enroll -->
+        <h2 class="sub-heading">
+            <i class="bi bi-bookmark-plus-fill heading-icon"></i> Courses to Enroll
+        </h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <% courses.filter(course => !course.isEnrolled).forEach(course => { %>
+                <div class="col mb-4">
+                    <div class="card course-card">
+                        <% if (course.isPremium && !course.isUnlocked) { %>
+                            <div class="locked-overlay">
+                                <button class="btn btn-unlock" onclick="window.location.href='/student/unlock/<%= course.id %>'">Unlock</button>
+                            </div>
+                        <% } %>
+                        <img src='https://tse3.mm.bing.net/th?id=OIP.oKvhH_N838tGsPKJbd5AIQHaEK&pid=Api&P=0&h=180' alt="Course Image">
+                        <div class="card-body">
+                            <h3 class="card-title"><%= course.title %></h3>
+                            <p class="card-text text-muted"><%= course.description %></p>
+                            <div class="course-details">
+                                <div>
+                                    <span class="badge bg-success">Go Ahead</span>
+                                    <% if (course.isPremium) { %>
+                                        <span class="badge bg-warning text-dark">Premium</span>
+                                    <% } %>
+                                </div>
+                                <div>
+                                    <span class="text-warning"><i class="bi bi-star-fill"></i>4.5</span>
+                                </div>
+                            </div>
+                            <form action="/student/enroll" method="POST">
+                                <input type="hidden" name="courseId" value="<%= course.id || course.course_id %>">
+                                <button type="submit" class="btn btn-primary btn-enroll">Enroll</button>
+                            </form>
+                        </div>
+                        <div class="course-footer">
+                            <small>Instructor: <%= course.instructor_name %> | 
+                            Created: <%= new Date(course.created_at).toLocaleDateString() %></small>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
         </div>
     <% } else { %>
         <div class="alert alert-info text-center py-4">

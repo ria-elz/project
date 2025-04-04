@@ -51,15 +51,15 @@ const getUserProgress = async (userId) => {
 
 // Create a course with videos and notes (as JSON arrays)
 const createCourse = async (courseData) => {
-    const { instructorId, courseTitle, description } = courseData;
+    const { instructorId, courseTitle, description, isPremium } = courseData;
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
         
         // Insert base course
         const [result] = await connection.query(
-            `INSERT INTO courses (instructor_id, title, description) VALUES (?, ?, ?)`,
-            [instructorId, courseTitle, description]
+            `INSERT INTO courses (instructor_id, title, description, is_premium) VALUES (?, ?, ?, ?)`,
+            [instructorId, courseTitle, description, isPremium]
         );
         
         const courseId = result.insertId;
@@ -91,7 +91,6 @@ const createCourse = async (courseData) => {
         connection.release();
     }
 };
-
 const deleteCourse = async (courseId) => {
     const connection = await db.getConnection();
     try {
@@ -113,6 +112,28 @@ const deleteCourse = async (courseId) => {
     }
 };
 
+const updateCourse = async (courseId, courseData) => {
+    const { title, description, isPremium } = courseData;
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // Update base course
+        await connection.query(
+            `UPDATE courses SET title = ?, description = ?, is_premium = ? WHERE id = ?`,
+            [title, description, isPremium, courseId]
+        );
+
+        // Additional logic to handle file updates can be added here
+
+        await connection.commit();
+    } catch (err) {
+        await connection.rollback();
+        throw err;
+    } finally {
+        connection.release();
+    }
+};
 
 module.exports = {
     getAllCourses,
@@ -120,5 +141,6 @@ module.exports = {
     enrollInCourse,
     getUserProgress,
     createCourse,
-    deleteCourse
+    deleteCourse,
+    updateCourse
 };

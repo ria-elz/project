@@ -48,15 +48,6 @@ router.get('/create-course', verifyToken, (req, res) => {
     });
 });
 
-// POST: Handle course creation
-// POST: Handle course creation with image upload
-router.get('/create-course', verifyToken, (req, res) => {
-    res.render('createCourse', { 
-        user: req.user,
-        messages: req.flash() 
-    });
-});
-
 // POST: Handle course creation with image upload
 router.post('/create-course', verifyToken, upload.fields([
     { name: 'videos', maxCount: 5 },
@@ -131,6 +122,7 @@ router.get('/dashboard', verifyToken, async (req, res) => {
 
         res.render('instructorDashboard', {
             courses: parsedCourses,
+            user: req.user,
             messages: req.flash()
         });
 
@@ -182,6 +174,7 @@ router.delete('/course/:id', verifyToken, async (req, res) => {
         connection.release();
     }
 });
+
 // GET: Load edit course form
 router.get('/edit-course/:courseId', verifyToken, async (req, res) => {
     try {
@@ -216,7 +209,7 @@ router.get('/edit-course/:courseId', verifyToken, async (req, res) => {
     }
 });
 
-// 🔹 View Enrolled Students Route
+// View Enrolled Students Route
 router.get('/view-enrolled-students/:courseId', async (req, res) => {
     const { courseId } = req.params;
 
@@ -241,8 +234,6 @@ router.get('/view-enrolled-students/:courseId', async (req, res) => {
     }
 });
 
-
-// PUT: Update course details
 // PUT: Update course details
 router.put('/update-course/:courseId', verifyToken, upload.fields([
     { name: 'videos', maxCount: 5 },
@@ -309,16 +300,14 @@ router.put('/update-course/:courseId', verifyToken, upload.fields([
             }
             
             // Handle new notes
-          // Handle new notes
-if (req.files.notes) {
-    for (const note of req.files.notes) {
-        // Use db.query instead of pool.query
-        await db.query(
-            "INSERT INTO course_notes (course_id, note_url) VALUES (?, ?)",
-            [courseId, note.filename] // Use the actual filename from multer
-        );
-    }
-}
+            if (req.files.notes) {
+                for (const note of req.files.notes) {
+                    await db.query(
+                        'INSERT INTO course_notes (course_id, note_url) VALUES (?, ?)',
+                        [courseId, note.filename]
+                    );
+                }
+            }
         }
         
         req.flash('success', 'Course updated successfully');

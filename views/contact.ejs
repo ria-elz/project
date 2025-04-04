@@ -132,19 +132,53 @@
 </nav>
 
     <!-- Contact Section -->
-    <section class="contact-section">
-        <h2>Contact Us</h2>
-        <p>Have questions? Get in touch with us.</p>
+    <!-- Contact Section -->
+<section class="contact-section">
+    <h2>Contact Us</h2>
+    <p>Have questions? Get in touch with us.</p>
 
-        <div class="contact-form">
-            <form action="/contact" method="POST">
-                <input type="text" name="name" placeholder="Your Name" required>
-                <input type="email" name="email" placeholder="Your Email" required>
-                <textarea name="message" rows="5" placeholder="Your Message" required></textarea>
-                <button type="submit">Send Message</button>
-            </form>
-        </div>
-    </section>
+    <div class="contact-form">
+        <form id="contactForm" action="/contact" method="POST">
+            <input type="text" name="name" placeholder="Your Name" required>
+            <input type="email" name="email" placeholder="Your Email" required>
+            <textarea name="message" rows="5" placeholder="Your Message" required></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+    </div>
+</section>
+
+<script>
+    document.getElementById('contactForm').addEventListener('submit', function(event) {
+        // Prevent the default form submission
+        event.preventDefault();
+        
+        // Show success message
+        alert('Message sent successfully!');
+        
+        // Get the form data to submit it manually if needed
+        const formData = new FormData(this);
+        
+        // You can use fetch to submit the data to your server
+        fetch('/contact', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            // After form submission completes, redirect to home page
+            window.location.href = '/home';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Redirect even if there's an error with the submission
+            window.location.href = '/home';
+        });
+        
+        // Alternative simpler approach: If you don't need to handle the response
+        // setTimeout(() => {
+        //     window.location.href = '/home';
+        // }, 500);
+    });
+</script>
 
     <!-- Footer -->
     <footer class="footer">
